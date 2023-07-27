@@ -3,9 +3,9 @@ import {
     createStore as createReduxStore,
     DeepPartial,
     StoreEnhancer,
-    ReducersMapObject,
     Reducer,
     compose,
+    AnyAction,
 } from "redux";
 import { composeWithDevTools } from "redux-devtools-extension/developmentOnly";
 import { getMiddlewareManager } from "./Managers/MiddlewareManager";
@@ -19,10 +19,25 @@ type ModuleStoreSettings<S> = {
     enhancers?: StoreEnhancer[];
     extensions?: IExtension[];
     advancedComposeEnhancers?: typeof compose;
-    advancedCombineReducers?: ((
-        reducers: ReducersMapObject<S, any>
-    ) => Reducer<S>);
+    advancedCombineReducers?: (
+        reducers: ConditionalReducersMapObject<S>
+    ) => Reducer<UnionToIntersection<StateType<S>>>;
 };
+
+// Helper types to calculate the final State type
+type UnionToIntersection<U> = (U extends any
+    ? (arg: U) => void
+    : never) extends (arg: infer I) => void
+    ? I
+    : never;
+
+type CombineModuleStates<S> = S extends IModuleStore<infer State>
+    ? State
+    : never;
+
+type StateType<S> = S extends Reducer<infer State, any> ? State : never;
+
+type ConditionalReducersMapObject<S> = { [K in keyof S]: Reducer<S[K], any> };
 
 /**
  * Configure the module store
@@ -96,9 +111,11 @@ export function createStore<State>(
 export function createStore<State>(
     moduleStoreSettings: ModuleStoreSettings<State>,
     ...initialModules: IModule<any>[]
-): IModuleStore<State> {
+): IModuleStore<CombineModuleStates<typeof initialModules[number]>> {
     const {
-        initialState = {},
+        initialState = {} as DeepPartial<
+            CombineModuleStates<typeof initialModules[number]>
+        >,
         extensions = [],
         enhancers = [],
         advancedComposeEnhancers = composeWithDevTools({}),
@@ -118,27 +135,29 @@ export function createStore<State>(
         (a, b) => a === b
     );
 
-    const enhancer = advancedComposeEnhancers(
+    const enhancer = advancedComposeEnhancers<{}>(
         ...enhancers,
         applyMiddleware(...extensionMiddleware, middlewareManager.enhancer)
-    );
+    ) as StoreEnhancer<{}, {}>;
 
     const moduleManager = getRefCountedManager(
         getModuleManager<State>(
             middlewareManager,
             extensions,
-            advancedCombineReducers
+            advancedCombineReducers as (
+                reducers: ConditionalReducersMapObject<State>
+            ) => Reducer<State>
         ),
         (a: IModule<any>, b: IModule<any>) => a.id === b.id,
         a => a.retained
     );
 
     // Create store
-    const store: IModuleStore<State> = createReduxStore<State, any, {}, {}>(
+    const store = createReduxStore<State, AnyAction, {}, {}>(
         moduleManager.getReducer,
         initialState,
-        enhancer as any
-    ) as IModuleStore<State>;
+        enhancer
+    ) as IModuleStore<CombineModuleStates<typeof initialModules[number]>>;
 
     moduleManager.setDispatch(store.dispatch);
 
@@ -158,10 +177,7 @@ export function createStore<State>(
 
     extensions.forEach(p => {
         if (p.onModuleManagerCreated) {
-            p.onModuleManagerCreated({
-                addModule,
-                addModules,
-            });
+            p.onModuleManagerCreated({ addModule, addModules });
         }
     });
 
@@ -181,5 +197,7 @@ export function createStore<State>(
 
     store.addModules(initialModules);
 
-    return store as IModuleStore<State>;
+    return store as IModuleStore<
+        CombineModuleStates<typeof initialModules[number]>
+    >;
 }

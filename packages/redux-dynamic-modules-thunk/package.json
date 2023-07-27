@@ -1,6 +1,6 @@
 {
     "name": "redux-dynamic-modules-thunk",
-    "version": "5.2.4",
+    "version": "5.2.3",
     "description": "Thunk Extension for redux-dynamic-modules",
     "repository": {
         "type": "github",
@@ -11,7 +11,7 @@
     "scripts": {
         "build": "npm run clean && tsc && webpack --mode development --display-modules --progress --display-error-details",
         "build:prod": "npm run clean && tsc && webpack --mode development --display-error-details && webpack --mode production --display-modules --progress --display-error-details",
-        "clean": "rimraf lib/ dist/"
+        "clean": ""
     },
     "keywords": [
         "react",
@@ -26,7 +26,7 @@
         "@types/jest": "^23.3.1",
         "@types/redux": "3.6.0",
         "jest": "^23.5.0",
-        "redux-dynamic-modules-core": "^5.2.4",
+        "redux-dynamic-modules-core": "^5.2.3",
         "redux-thunk": "^2.3.0",
         "rimraf": "^2.6.2",
         "ts-jest": "^23.1.4",

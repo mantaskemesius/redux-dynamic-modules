@@ -4,17 +4,12 @@
         "reset"
     ],
     "files.exclude": {
-        "**/.git": true,
         "**/.svn": true,
         "**/.hg": true,
         "**/CVS": true,
         "**/.DS_Store": true,
-        "**/node_modules": true,
-        "**/.gitignore": true,
         "**/.npmignore": true,
-        "**/lib": true,
         "**/etc": true,
-        "**/dist": true
     },
     "editor.formatOnPaste": true,
     "editor.formatOnSave": true

@@ -61,8 +61,6 @@ typings/
 .next
 
 # output folders
-dist/
-lib/
 
 # webstorm project configuration data
 .idea
